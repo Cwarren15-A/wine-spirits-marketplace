@@ -1,0 +1,110 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# backend dependencies
+apps/backend/node_modules
+apps/*/node_modules
+
+# testing
+/coverage
+apps/*/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+/dist
+apps/*/dist
+apps/*/build
+
+# misc
+.DS_Store
+*.pem
+Thumbs.db
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (CRITICAL: Never commit these for security)
+.env*
+!.env.example
+!env.example
+apps/backend/.env*
+apps/backend/!env.example
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# Nx
+.nx/cache
+.nx/workspace-data
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Database files (if using local databases)
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Compliance & sensitive data
+/compliance-reports/
+/audit-logs/
+*.pem
+*.key
+*.crt
+*.csr
+
+# Temporary files
+tmp/
+temp/
+.tmp/
