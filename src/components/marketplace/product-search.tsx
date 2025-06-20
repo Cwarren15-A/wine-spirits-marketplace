@@ -1,350 +1,373 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { orderBookApi, OrderBook, CreateOrderDto, utils } from "@/lib/api";
+import Link from 'next/link';
+import { searchApi, utils, type Product } from '@/lib/api';
+import { TrendBadge } from '@/components/ui/TrendBadge';
 
-interface RecentTrade {
-  id: string;
-  price: number;
-  quantity: number;
-  timestamp: Date;
-  type: 'buy' | 'sell';
+interface ProductSearchProps {
+  initialProducts?: Product[];
 }
 
-export default function OrderBookComponent({ productId = 'sample-product' }: { productId?: string }) {
-  const [orderBook, setOrderBook] = useState<OrderBook>({ bids: [], asks: [] });
-  const [recentTrades, setRecentTrades] = useState<RecentTrade[]>([]);
-  const [orderForm, setOrderForm] = useState({
-    type: 'bid' as 'bid' | 'ask',
-    price: '',
-    quantity: '1',
+export function ProductSearch({ initialProducts = [] }: ProductSearchProps) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
+  const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filters, setFilters] = useState({
+    type: '',
+    region: '',
+    priceMin: '',
+    priceMax: '',
+    vintage: '',
+    rating: '',
   });
-  const [connected, setConnected] = useState(false);
-  const [placing, setPlacing] = useState(false);
+  const [sortBy, setSortBy] = useState('featured');
+  const [total, setTotal] = useState(0);
 
+  // Load products on component mount
   useEffect(() => {
-    loadMarketData();
-    setConnected(true);
+    loadProducts();
+  }, [filters, sortBy]);
 
-    // Simulate real-time updates
-    const interval = setInterval(() => {
-      updateOrderBook();
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [productId]);
-
-  const loadMarketData = async () => {
+  const loadProducts = async () => {
+    setLoading(true);
     try {
-      const marketDepth = await orderBookApi.getMarketDepth(productId);
-      setOrderBook(marketDepth);
-    } catch (error) {
-      console.error('Failed to load market data:', error);
-      // API service handles fallback data automatically
-    }
-  };
-
-  const updateOrderBook = () => {
-    // Simulate minor price movements
-    setOrderBook(prev => ({
-      bids: prev.bids.map(bid => ({
-        ...bid,
-        price: bid.price + (Math.random() - 0.5) * 0.5,
-        quantity: Math.max(1, bid.quantity + Math.floor((Math.random() - 0.5) * 2)),
-      })),
-      asks: prev.asks.map(ask => ({
-        ...ask,
-        price: ask.price + (Math.random() - 0.5) * 0.5,
-        quantity: Math.max(1, ask.quantity + Math.floor((Math.random() - 0.5) * 2)),
-      })),
-    }));
-  };
-
-  const handlePlaceOrder = async () => {
-    if (!orderForm.price || !orderForm.quantity) {
-      return;
-    }
-
-    setPlacing(true);
-    try {
-      const orderData: CreateOrderDto = {
-        product_id: productId,
-        user_id: 'demo-user-id',
-        order_type: orderForm.type,
-        price: parseFloat(orderForm.price),
-        quantity: parseInt(orderForm.quantity),
-        age_verified: true,
-        shipping_state: 'CA',
+      const params = {
+        query: searchQuery || undefined,
+        type: filters.type || undefined,
+        region: filters.region || undefined,
+        priceMin: filters.priceMin ? parseFloat(filters.priceMin) : undefined,
+        priceMax: filters.priceMax ? parseFloat(filters.priceMax) : undefined,
+        vintage: filters.vintage ? parseInt(filters.vintage) : undefined,
+        rating: filters.rating ? parseFloat(filters.rating) : undefined,
       };
 
-      const result = await orderBookApi.placeOrder(orderData);
+      const result = await searchApi.searchProducts(params);
       
-      if (result.success) {
-        console.log('Order placed successfully:', result);
-        // Reset form
-        setOrderForm({ type: 'bid', price: '', quantity: '1' });
-        // Reload market data
-        await loadMarketData();
+      // Sort products
+      let sortedProducts = [...result.products];
+      switch (sortBy) {
+        case 'price-low':
+          sortedProducts.sort((a, b) => (a.current_price || a.base_price) - (b.current_price || b.base_price));
+          break;
+        case 'price-high':
+          sortedProducts.sort((a, b) => (b.current_price || b.base_price) - (a.current_price || a.base_price));
+          break;
+        case 'rating':
+          sortedProducts.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+          break;
+        case 'vintage':
+          sortedProducts.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
+          break;
+        case 'rarity':
+          sortedProducts.sort((a, b) => (b.rarity_score || 0) - (a.rarity_score || 0));
+          break;
+        case 'performance':
+          sortedProducts.sort((a, b) => (b.fiveYearPriceChangePct || 0) - (a.fiveYearPriceChangePct || 0));
+          break;
+        default: // featured
+          sortedProducts.sort((a, b) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return (b.rarity_score || 0) - (a.rarity_score || 0);
+          });
       }
+
+      setProducts(sortedProducts);
+      setTotal(result.total);
     } catch (error) {
-      console.error('Order placement error:', error);
+      console.error('Error loading products:', error);
     } finally {
-      setPlacing(false);
+      setLoading(false);
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadProducts();
   };
 
-  const getBestBid = () => orderBook.bids[0]?.price || 0;
-  const getBestAsk = () => orderBook.asks[0]?.price || 0;
-  const getSpread = () => getBestAsk() - getBestBid();
-  const getSpreadPercent = () => (getSpread() / getBestAsk()) * 100;
+  const clearFilters = () => {
+    setFilters({
+      type: '',
+      region: '',
+      priceMin: '',
+      priceMax: '',
+      vintage: '',
+      rating: '',
+    });
+    setSearchQuery('');
+  };
 
-  // Sample recent trades for demo
-  useEffect(() => {
-    setRecentTrades([
-      { id: '1', price: 126.00, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 5), type: 'buy' },
-      { id: '2', price: 125.50, quantity: 2, timestamp: new Date(Date.now() - 1000 * 60 * 15), type: 'sell' },
-      { id: '3', price: 126.25, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 30), type: 'buy' },
-      { id: '4', price: 125.75, quantity: 3, timestamp: new Date(Date.now() - 1000 * 60 * 45), type: 'sell' },
-    ]);
-  }, []);
+  const ProductCard = ({ product }: { product: Product }) => (
+    <Link href={`/marketplace/product/${product.id}`} className="group">
+      <div className="card-premium rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
+        {/* Product Image */}
+        <div className="relative h-64 bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center">
+          {product.primary_image_url ? (
+            <img
+              src={product.primary_image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`text-6xl ${product.primary_image_url ? 'hidden' : ''}`}>
+            {utils.getProductIcon(product.type)}
+          </div>
+          
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {product.featured && (
+              <span className="bg-gold-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                ⭐ FEATURED
+              </span>
+            )}
+            {product.investment_grade && (
+              <span className="bg-wine-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                💎 INVESTMENT
+              </span>
+            )}
+          </div>
+
+          {/* Price Change & 5-Year Performance */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2">
+            {product.price_change_24h && (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                product.price_change_24h > 0 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-red-500 text-white'
+              }`}>
+                {utils.formatPercentage(product.price_change_24h)}
+              </span>
+            )}
+            {product.fiveYearPriceChangePct !== undefined && (
+              <TrendBadge pct={product.fiveYearPriceChangePct} size="sm" />
+            )}
+          </div>
+        </div>
+
+        {/* Product Info */}
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-wine-600 font-medium">
+                {product.type.toUpperCase()} • {product.vintage || 'NV'}
+              </span>
+              <span className="text-sm text-slate-500">
+                {utils.getVerificationBadge(product.seller.verification_status)}
+              </span>
+            </div>
+            
+            <h3 className="text-lg font-bold text-wine-900 mb-1 group-hover:text-wine-700 transition-colors">
+              {product.name}
+            </h3>
+            
+            <p className="text-sm text-wine-600 mb-2">
+              {product.producer} • {product.region}
+            </p>
+          </div>
+
+          {/* Investment Performance */}
+          {product.fiveYearPriceChangePct !== undefined && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-wine-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">5-Year Performance</span>
+                <TrendBadge pct={product.fiveYearPriceChangePct} size="md" />
+              </div>
+              <div className="text-xs text-slate-600 mt-1">
+                Investment-grade collectible with strong market performance
+              </div>
+            </div>
+          )}
+
+          {/* Price */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-wine-900">
+                  {utils.formatPrice(product.current_price || product.base_price)}
+                </div>
+                {product.current_price && product.current_price !== product.base_price && (
+                  <div className="text-sm text-slate-500 line-through">
+                    {utils.formatPrice(product.base_price)}
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-right">
+                <button className="btn-premium px-4 py-2 text-sm font-semibold rounded-lg">
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-red-600 bg-clip-text text-transparent">
-          Order Book & Market Depth
+        <h1 className="text-4xl font-bold text-premium mb-4">
+          Premium Wine & Spirits Collection
         </h1>
-        <p className="text-lg text-slate-600 mb-6">
-          Phase 3: Real-time bid/ask matching with price-time priority algorithm
+        <p className="text-xl text-slate-600">
+          Discover investment-grade wines and rare spirits from verified sellers
         </p>
-
-        {/* Market Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-slate-500">Best Bid</div>
-              <div className="text-xl font-bold text-green-600">
-                {utils.formatPrice(getBestBid())}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-slate-500">Best Ask</div>
-              <div className="text-xl font-bold text-red-600">
-                {utils.formatPrice(getBestAsk())}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-slate-500">Spread</div>
-              <div className="text-xl font-bold">
-                {utils.formatPrice(getSpread())}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-sm text-slate-500">Spread %</div>
-              <div className="text-xl font-bold">
-                {getSpreadPercent().toFixed(2)}%
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Connection Status */}
-        <div className="flex items-center gap-2 mb-6">
-          <div className={`w-3 h-3 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-          <span className="text-sm text-slate-600">
-            {connected ? 'Real-time data connected' : 'Disconnected'}
-          </span>
-        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Order Book */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Market Depth</CardTitle>
-              <CardDescription>
-                Live order book with bid/ask levels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 gap-6">
-                {/* Bids */}
-                <div>
-                  <h4 className="font-semibold text-green-600 mb-3">
-                    Bids (Buy Orders)
-                  </h4>
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-3 text-xs text-slate-500 pb-2 border-b">
-                      <span>Price</span>
-                      <span>Quantity</span>
-                      <span>Orders</span>
-                    </div>
-                    {orderBook.bids.map((bid, index) => (
-                      <div
-                        key={index}
-                        className="grid grid-cols-3 text-sm hover:bg-green-50 p-1 rounded"
-                      >
-                        <span className="font-mono text-green-600">
-                          {utils.formatPrice(bid.price)}
-                        </span>
-                        <span>{bid.quantity}</span>
-                        <span className="text-slate-500">{bid.orders}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+      {/* Search & Filters */}
+      <div className="card-premium rounded-xl p-6 mb-8">
+        <form onSubmit={handleSearch} className="space-y-4">
+          {/* Search Bar */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search wines, spirits, producers, regions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-premium px-6 py-3 rounded-lg font-semibold disabled:opacity-50"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+          </div>
 
-                {/* Asks */}
-                <div>
-                  <h4 className="font-semibold text-red-600 mb-3">
-                    Asks (Sell Orders)
-                  </h4>
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-3 text-xs text-slate-500 pb-2 border-b">
-                      <span>Price</span>
-                      <span>Quantity</span>
-                      <span>Orders</span>
-                    </div>
-                    {orderBook.asks.map((ask, index) => (
-                      <div
-                        key={index}
-                        className="grid grid-cols-3 text-sm hover:bg-red-50 p-1 rounded"
-                      >
-                        <span className="font-mono text-red-600">
-                          {utils.formatPrice(ask.price)}
-                        </span>
-                        <span>{ask.quantity}</span>
-                        <span className="text-slate-500">{ask.orders}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Filters Row */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            >
+              <option value="">All Types</option>
+              <option value="wine">Wine</option>
+              <option value="spirits">Spirits</option>
+            </select>
 
-        {/* Order Form & Recent Trades */}
-        <div className="space-y-6">
-          {/* Place Order */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Place Order</CardTitle>
-              <CardDescription>
-                Submit bid/ask orders to the marketplace
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant={orderForm.type === 'bid' ? 'default' : 'outline'}
-                  onClick={() => setOrderForm({ ...orderForm, type: 'bid' })}
-                  className="text-green-600"
-                >
-                  Buy (Bid)
-                </Button>
-                <Button
-                  variant={orderForm.type === 'ask' ? 'default' : 'outline'}
-                  onClick={() => setOrderForm({ ...orderForm, type: 'ask' })}
-                  className="text-red-600"
-                >
-                  Sell (Ask)
-                </Button>
-              </div>
+            <input
+              type="text"
+              placeholder="Region"
+              value={filters.region}
+              onChange={(e) => setFilters(prev => ({ ...prev, region: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Price</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={orderForm.price}
-                  onChange={(e) => setOrderForm({ ...orderForm, price: e.target.value })}
-                />
-              </div>
+            <input
+              type="number"
+              placeholder="Min Price"
+              value={filters.priceMin}
+              onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Quantity</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={orderForm.quantity}
-                  onChange={(e) => setOrderForm({ ...orderForm, quantity: e.target.value })}
-                />
-              </div>
+            <input
+              type="number"
+              placeholder="Max Price"
+              value={filters.priceMax}
+              onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
 
-              <Button
-                onClick={handlePlaceOrder}
-                className="w-full"
-                variant="wine"
-                disabled={!orderForm.price || !orderForm.quantity || placing}
-              >
-                {placing ? 'Placing...' : `Place ${orderForm.type === 'bid' ? 'Buy' : 'Sell'} Order`}
-              </Button>
+            <input
+              type="number"
+              placeholder="Vintage"
+              value={filters.vintage}
+              onChange={(e) => setFilters(prev => ({ ...prev, vintage: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
 
-              <div className="text-xs text-slate-500 space-y-1">
-                <p>• Age verification required (21+)</p>
-                <p>• Adult signature delivery</p>
-                <p>• TTB compliance enforced</p>
-              </div>
-            </CardContent>
-          </Card>
+            <select
+              value={filters.rating}
+              onChange={(e) => setFilters(prev => ({ ...prev, rating: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            >
+              <option value="">Any Rating</option>
+              <option value="4.5">4.5+ Stars</option>
+              <option value="4.0">4.0+ Stars</option>
+              <option value="3.5">3.5+ Stars</option>
+            </select>
+          </div>
 
-          {/* Recent Trades */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Trades</CardTitle>
-              <CardDescription>
-                Latest executed orders
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 text-xs text-slate-500 pb-2 border-b">
-                  <span>Price</span>
-                  <span>Qty</span>
-                  <span>Time</span>
-                </div>
-                {recentTrades.map((trade) => (
-                  <div
-                    key={trade.id}
-                    className="grid grid-cols-3 text-sm"
-                  >
-                    <span
-                      className={`font-mono ${
-                        trade.type === 'buy' ? 'text-green-600' : 'text-red-600'
-                      }`}
-                    >
-                      {utils.formatPrice(trade.price)}
-                    </span>
-                    <span>{trade.quantity}</span>
-                    <span className="text-slate-500">
-                      {formatTime(trade.timestamp)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Clear Filters */}
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-wine-600 hover:text-wine-800 text-sm font-medium"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        </form>
       </div>
+
+      {/* Results Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-slate-600">
+          {loading ? 'Searching...' : `${total} products found`}
+        </div>
+        
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+        >
+          <option value="featured">Featured First</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+          <option value="rating">Highest Rated</option>
+          <option value="vintage">Newest Vintage</option>
+          <option value="rarity">Rarity Score</option>
+          <option value="performance">5-Year Performance</option>
+        </select>
+      </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card-premium rounded-xl p-6 animate-pulse">
+              <div className="h-64 bg-slate-200 rounded-lg mb-4"></div>
+              <div className="h-4 bg-slate-200 rounded mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+              <div className="h-8 bg-slate-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🍷</div>
+          <h3 className="text-xl font-semibold text-slate-800 mb-2">No products found</h3>
+          <p className="text-slate-600 mb-4">Try adjusting your search criteria</p>
+          <button
+            onClick={clearFilters}
+            className="btn-premium px-6 py-3 rounded-lg font-semibold"
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 
