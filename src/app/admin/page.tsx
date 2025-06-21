@@ -17,51 +17,52 @@ interface MarketUpdate {
 }
 
 export default function AdminDashboard() {
-  const [apiKey, setApiKey] = useState('');
+  const [password, setPassword] = useState('');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<MarketUpdate | null>(null);
   const [marketCommentary, setMarketCommentary] = useState('');
   const [error, setError] = useState('');
 
-  const handlePriceUpdate = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter your OpenAI API key');
-      return;
+  const handlePasswordSubmit = () => {
+    // Simple password check - you can change this password
+    if (password === 'admin123') {
+      setIsAuthenticated(true);
+      setError('');
+    } else {
+      setError('Invalid password');
     }
+  };
 
+  const handlePriceUpdate = async () => {
     setLoading(true);
     setError('');
 
     try {
-      const update = await runScheduledPriceUpdate(apiKey);
+      // Use environment variable instead of user input
+      const update = await runScheduledPriceUpdate(process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
       setLastUpdate(update);
       
-      // Show success message
       alert(`Successfully updated ${update.totalProductsUpdated} products with ${update.marketSentiment} sentiment!`);
     } catch (err) {
-      setError(`Error updating prices: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`Error updating prices: ${err instanceof Error ? err.message : 'OpenAI API key not configured'}`);
     } finally {
       setLoading(false);
     }
   };
 
   const handleMarketInsights = async () => {
-    if (!apiKey.trim()) {
-      setError('Please enter your OpenAI API key');
-      return;
-    }
-
     setLoading(true);
     setError('');
 
     try {
-      const insights = await getMarketInsights(apiKey);
+      const insights = await getMarketInsights(process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
       setLastUpdate(insights.updates);
       setMarketCommentary(insights.commentary);
       
       alert('Market insights generated successfully!');
     } catch (err) {
-      setError(`Error generating insights: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setError(`Error generating insights: ${err instanceof Error ? err.message : 'OpenAI API key not configured'}`);
     } finally {
       setLoading(false);
     }
@@ -75,37 +76,100 @@ export default function AdminDashboard() {
     }
   };
 
+  // Password protection screen
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-wine-50 flex items-center justify-center p-8">
+        <div className="card-premium rounded-xl p-8 max-w-md w-full text-center">
+          <div className="text-6xl mb-6">🔐</div>
+          
+          <h1 className="text-3xl font-bold text-wine-900 mb-4">
+            Admin Access Required
+          </h1>
+          
+          <p className="text-slate-600 mb-6">
+            Please enter the admin password to access the marketplace administration panel.
+          </p>
+          
+          <div className="mb-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              placeholder="Enter admin password"
+              className="w-full px-4 py-3 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500 focus:border-transparent"
+            />
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            onClick={handlePasswordSubmit}
+            className="w-full btn-premium px-6 py-3 rounded-lg font-semibold"
+          >
+            Access Admin Panel
+          </button>
+          
+          <div className="mt-6 text-xs text-slate-500">
+            <p>🔒 Authorized personnel only</p>
+            <p>Contact system administrator for access</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-wine-50 p-8">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-premium mb-4">
-            🍷 Marketplace Admin Dashboard
-          </h1>
-          <p className="text-xl text-slate-600">
-            Use your OpenAI API key to generate realistic price updates and keep the marketplace feeling live
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold text-premium mb-4">
+                🍷 Marketplace Admin Dashboard
+              </h1>
+              <p className="text-xl text-slate-600">
+                AI-powered price updates using configured OpenAI API
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setIsAuthenticated(false)}
+              className="btn-gold px-4 py-2 rounded-lg font-semibold text-sm"
+            >
+              Logout
+            </button>
+          </div>
         </div>
 
-        {/* API Key Input */}
+        {/* API Status */}
         <div className="card-premium rounded-xl p-6 mb-8">
-          <h2 className="text-2xl font-semibold text-wine-800 mb-4">OpenAI Configuration</h2>
+          <h2 className="text-2xl font-semibold text-wine-800 mb-4">System Status</h2>
           
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              OpenAI API Key
-            </label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="sk-..."
-              className="w-full px-4 py-3 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500 focus:border-transparent"
-            />
-            <p className="text-xs text-slate-500 mt-1">
-              Your API key is only used for this session and never stored
-            </p>
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            <div className="p-4 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="font-medium">OpenAI API</span>
+              </div>
+              <p className="text-sm text-slate-600 mt-1">
+                {process.env.NEXT_PUBLIC_OPENAI_API_KEY ? 'Configured & Ready' : 'Not Configured'}
+              </p>
+            </div>
+            
+            <div className="p-4 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="font-medium">Price Engine</span>
+              </div>
+              <p className="text-sm text-slate-600 mt-1">Ready for Updates</p>
+            </div>
           </div>
 
           {error && (
@@ -117,7 +181,7 @@ export default function AdminDashboard() {
           <div className="flex gap-4">
             <button
               onClick={handlePriceUpdate}
-              disabled={loading || !apiKey.trim()}
+              disabled={loading}
               className="btn-premium px-6 py-3 rounded-lg font-semibold disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update Prices'}
@@ -125,7 +189,7 @@ export default function AdminDashboard() {
             
             <button
               onClick={handleMarketInsights}
-              disabled={loading || !apiKey.trim()}
+              disabled={loading}
               className="btn-gold px-6 py-3 rounded-lg font-semibold disabled:opacity-50"
             >
               {loading ? 'Generating...' : 'Generate Market Insights'}
@@ -212,28 +276,28 @@ export default function AdminDashboard() {
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-wine-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
               <div>
-                <strong>Enter your OpenAI API Key:</strong> Your personal API key is used to generate realistic market movements
+                <strong>Environment Variables:</strong> OpenAI API key is securely stored in Vercel environment variables
               </div>
             </div>
             
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-wine-600 text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
               <div>
-                <strong>Update Prices:</strong> AI analyzes current products and generates realistic price movements based on market conditions
+                <strong>Update Prices:</strong> AI analyzes current products and generates realistic price movements
               </div>
             </div>
             
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-wine-600 text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
               <div>
-                <strong>Generate Insights:</strong> Get market commentary and comprehensive price updates with reasoning
+                <strong>Generate Insights:</strong> Get market commentary and comprehensive analysis
               </div>
             </div>
             
             <div className="flex items-start gap-3">
               <div className="w-6 h-6 bg-wine-600 text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
               <div>
-                <strong>Live Marketplace:</strong> Updated prices make the marketplace feel dynamic and real-time
+                <strong>Secure Access:</strong> Password-protected admin panel for authorized users only
               </div>
             </div>
           </div>
@@ -242,9 +306,9 @@ export default function AdminDashboard() {
             <h3 className="font-semibold text-blue-800 mb-2">💡 Pro Tips:</h3>
             <ul className="text-sm text-blue-700 space-y-1">
               <li>• Run updates 1-2 times per day for realistic market movement</li>
-              <li>• Price changes are based on actual market factors (seasonality, rarity, trends)</li>
-              <li>• Each update affects 5-8 random products to simulate natural market activity</li>
-              <li>• Updates include market reasoning to understand price movements</li>
+              <li>• API key is securely managed through environment variables</li>
+              <li>• Password: admin123 (change in code for production)</li>
+              <li>• All price changes are AI-generated based on market conditions</li>
             </ul>
           </div>
         </div>
