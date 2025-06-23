@@ -119,8 +119,14 @@ export class DatabaseAgent {
 
   // Update existing product prices based on market trends
   async updateProductPrices(): Promise<void> {
-    for (const product of products) {
-      const trend = this.getMarketTrend(product.region, product.type);
+    // Filter to only wine and spirits products since market trends are only defined for these types
+    const wineAndSpiritsProducts = products.filter(product => 
+      product.type === 'wine' || product.type === 'spirits'
+    );
+    
+    for (const product of wineAndSpiritsProducts) {
+      // Type assertion since we've filtered to only wine and spirits
+      const trend = this.getMarketTrend(product.region, product.type as 'wine' | 'spirits');
       const priceUpdate = this.calculatePriceUpdate(product, trend);
       
       // Update current price and price change
