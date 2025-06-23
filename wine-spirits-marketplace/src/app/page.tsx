@@ -109,7 +109,7 @@ export default function Home() {
           <div>
             <h2 className="text-3xl font-bold text-wine-800 mb-6">Our Mission</h2>
             <p className="text-lg text-slate-700 mb-6">
-              We're revolutionizing the way collectors, connoisseurs, and industry professionals 
+              We&apos;re revolutionizing the way collectors, connoisseurs, and industry professionals 
               trade premium wines and spirits. Our platform ensures transparency, authenticity, 
               and full regulatory compliance for every transaction.
             </p>
@@ -219,7 +219,7 @@ export default function Home() {
                   <h3 className="text-xl font-semibold text-wine-700 mb-2">Address</h3>
                   <p className="text-slate-600">
                     123 Premium Way<br />
-                    Collector's District<br />
+                    Collector&apos;s District<br />
                     San Francisco, CA 94105
                   </p>
                 </div>
@@ -354,29 +354,37 @@ export default function Home() {
           <h2 className="text-3xl font-bold text-center text-wine-800 mb-8">Featured Categories</h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors">
-              <div className="text-3xl mb-2">🇫🇷</div>
-              <h4 className="font-semibold text-wine-700">French Wines</h4>
-              <p className="text-sm text-slate-600">15 products</p>
-            </div>
+            <Link href="/marketplace?type=wine&region=france">
+              <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer">
+                <div className="text-3xl mb-2">🇫🇷</div>
+                <h4 className="font-semibold text-wine-700">French Wines</h4>
+                <p className="text-sm text-slate-600">15 products</p>
+              </div>
+            </Link>
             
-            <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors">
-              <div className="text-3xl mb-2">🥂</div>
-              <h4 className="font-semibold text-wine-700">Champagne</h4>
-              <p className="text-sm text-slate-600">8 products</p>
-            </div>
+            <Link href="/marketplace?type=wine&varietal=champagne">
+              <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer">
+                <div className="text-3xl mb-2">🥂</div>
+                <h4 className="font-semibold text-wine-700">Champagne</h4>
+                <p className="text-sm text-slate-600">8 products</p>
+              </div>
+            </Link>
             
-            <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors">
-              <div className="text-3xl mb-2">🏴󠁧󠁢󠁳󠁣󠁴󠁿</div>
-              <h4 className="font-semibold text-wine-700">Scotch Whisky</h4>
-              <p className="text-sm text-slate-600">10 products</p>
-            </div>
+            <Link href="/marketplace?type=spirits&region=scotland">
+              <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer">
+                <div className="text-3xl mb-2">🏴󠁧󠁢󠁳󠁣󠁴󠁿</div>
+                <h4 className="font-semibold text-wine-700">Scotch Whisky</h4>
+                <p className="text-sm text-slate-600">10 products</p>
+              </div>
+            </Link>
             
-            <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors">
-              <div className="text-3xl mb-2">🍯</div>
-              <h4 className="font-semibold text-wine-700">Cognac</h4>
-              <p className="text-sm text-slate-600">4 products</p>
-            </div>
+            <Link href="/marketplace?type=spirits&varietal=cognac">
+              <div className="text-center p-4 border border-wine-200 rounded-lg hover:bg-wine-50 transition-colors cursor-pointer">
+                <div className="text-3xl mb-2">🍯</div>
+                <h4 className="font-semibold text-wine-700">Cognac</h4>
+                <p className="text-sm text-slate-600">4 products</p>
+              </div>
+            </Link>
           </div>
         </div>
       </div>
@@ -400,10 +408,12 @@ export default function Home() {
     <>
       <AgeVerification onVerified={() => setIsAgeVerified(true)} />
       
-      <div className="min-h-screen">
-        <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
-        {renderCurrentSection()}
-      </div>
+      {isAgeVerified && (
+        <div className="min-h-screen">
+          <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+          {renderCurrentSection()}
+        </div>
+      )}
     </>
   );
 }
