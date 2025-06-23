@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "wine-spirits-marketplace",
+  "builds": [
+    {
+      "src": "wine-spirits-marketplace/package.json",
+      "use": "@vercel/next"
+    }
+  ]
+} 
