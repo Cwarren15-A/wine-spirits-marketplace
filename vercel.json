@@ -5,20 +5,5 @@
   "buildCommand": "cd wine-spirits-marketplace && npm run build",
   "outputDirectory": "wine-spirits-marketplace/.next",
   "installCommand": "cd wine-spirits-marketplace && npm install",
-  "framework": "nextjs",
-  "functions": {
-    "wine-spirits-marketplace/src/app/**/*.tsx": {
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
-  ]
+  "framework": "nextjs"
 } 
