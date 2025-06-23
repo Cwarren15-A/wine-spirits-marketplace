@@ -7,19 +7,28 @@ import { TrendBadge } from '@/components/ui/TrendBadge';
 
 interface ProductSearchProps {
   initialProducts?: Product[];
+  initialFilters?: {
+    type?: string;
+    region?: string;
+    varietal?: string;
+    priceMin?: string;
+    priceMax?: string;
+    vintage?: string;
+    rating?: string;
+  };
 }
 
-export function ProductSearch({ initialProducts = [] }: ProductSearchProps) {
+export function ProductSearch({ initialProducts = [], initialFilters }: ProductSearchProps) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
-    type: '',
-    region: '',
-    priceMin: '',
-    priceMax: '',
-    vintage: '',
-    rating: '',
+    type: initialFilters?.type || '',
+    region: initialFilters?.region || initialFilters?.varietal || '',
+    priceMin: initialFilters?.priceMin || '',
+    priceMax: initialFilters?.priceMax || '',
+    vintage: initialFilters?.vintage || '',
+    rating: initialFilters?.rating || '',
   });
   const [sortBy, setSortBy] = useState('featured');
   const [total, setTotal] = useState(initialProducts.length);
