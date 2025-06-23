@@ -4,17 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface OrderBookEntry {
-  price: number;
-  quantity: number;
-  orders: number;
-}
-
-interface OrderBook {
-  bids: OrderBookEntry[];
-  asks: OrderBookEntry[];
-}
+import { orderBookApi, OrderBook, CreateOrderDto, utils } from "@/lib/api";
 
 interface RecentTrade {
   id: string;
@@ -24,7 +14,7 @@ interface RecentTrade {
   type: 'buy' | 'sell';
 }
 
-export default function OrderBook({ productId = 'sample-product' }: { productId?: string }) {
+export default function OrderBookComponent({ productId = 'sample-product' }: { productId?: string }) {
   const [orderBook, setOrderBook] = useState<OrderBook>({ bids: [], asks: [] });
   const [recentTrades, setRecentTrades] = useState<RecentTrade[]>([]);
   const [orderForm, setOrderForm] = useState({
@@ -33,11 +23,11 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
     quantity: '1',
   });
   const [connected, setConnected] = useState(false);
+  const [placing, setPlacing] = useState(false);
 
   useEffect(() => {
-    // Simulate WebSocket connection and load sample data
+    loadMarketData();
     setConnected(true);
-    loadSampleData();
 
     // Simulate real-time updates
     const interval = setInterval(() => {
@@ -47,32 +37,14 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
     return () => clearInterval(interval);
   }, [productId]);
 
-  const loadSampleData = () => {
-    // Sample order book data
-    setOrderBook({
-      bids: [
-        { price: 125.00, quantity: 2, orders: 1 },
-        { price: 124.50, quantity: 1, orders: 1 },
-        { price: 124.00, quantity: 3, orders: 2 },
-        { price: 123.50, quantity: 1, orders: 1 },
-        { price: 123.00, quantity: 2, orders: 1 },
-      ],
-      asks: [
-        { price: 127.00, quantity: 1, orders: 1 },
-        { price: 127.50, quantity: 2, orders: 1 },
-        { price: 128.00, quantity: 1, orders: 1 },
-        { price: 128.50, quantity: 3, orders: 2 },
-        { price: 129.00, quantity: 1, orders: 1 },
-      ],
-    });
-
-    // Sample recent trades
-    setRecentTrades([
-      { id: '1', price: 126.00, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 5), type: 'buy' },
-      { id: '2', price: 125.50, quantity: 2, timestamp: new Date(Date.now() - 1000 * 60 * 15), type: 'sell' },
-      { id: '3', price: 126.25, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 30), type: 'buy' },
-      { id: '4', price: 125.75, quantity: 3, timestamp: new Date(Date.now() - 1000 * 60 * 45), type: 'sell' },
-    ]);
+  const loadMarketData = async () => {
+    try {
+      const marketDepth = await orderBookApi.getMarketDepth(productId);
+      setOrderBook(marketDepth);
+    } catch (error) {
+      console.error('Failed to load market data:', error);
+      // API service handles fallback data automatically
+    }
   };
 
   const updateOrderBook = () => {
@@ -92,44 +64,36 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
   };
 
   const handlePlaceOrder = async () => {
-    try {
-      const response = await fetch('http://localhost:3001/order-book/orders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          product_id: productId,
-          user_id: 'sample-user-id',
-          order_type: orderForm.type,
-          price: parseFloat(orderForm.price),
-          quantity: parseInt(orderForm.quantity),
-          age_verified: true,
-          shipping_state: 'CA',
-        }),
-      });
+    if (!orderForm.price || !orderForm.quantity) {
+      return;
+    }
 
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Order placed:', result);
+    setPlacing(true);
+    try {
+      const orderData: CreateOrderDto = {
+        product_id: productId,
+        user_id: 'demo-user-id',
+        order_type: orderForm.type,
+        price: parseFloat(orderForm.price),
+        quantity: parseInt(orderForm.quantity),
+        age_verified: true,
+        shipping_state: 'CA',
+      };
+
+      const result = await orderBookApi.placeOrder(orderData);
+      
+      if (result.success) {
+        console.log('Order placed successfully:', result);
         // Reset form
         setOrderForm({ type: 'bid', price: '', quantity: '1' });
-        // In a real app, the WebSocket would update the order book
-        loadSampleData();
-      } else {
-        console.error('Failed to place order');
+        // Reload market data
+        await loadMarketData();
       }
     } catch (error) {
       console.error('Order placement error:', error);
+    } finally {
+      setPlacing(false);
     }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(price);
   };
 
   const formatTime = (date: Date) => {
@@ -143,6 +107,16 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
   const getBestAsk = () => orderBook.asks[0]?.price || 0;
   const getSpread = () => getBestAsk() - getBestBid();
   const getSpreadPercent = () => (getSpread() / getBestAsk()) * 100;
+
+  // Sample recent trades for demo
+  useEffect(() => {
+    setRecentTrades([
+      { id: '1', price: 126.00, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 5), type: 'buy' },
+      { id: '2', price: 125.50, quantity: 2, timestamp: new Date(Date.now() - 1000 * 60 * 15), type: 'sell' },
+      { id: '3', price: 126.25, quantity: 1, timestamp: new Date(Date.now() - 1000 * 60 * 30), type: 'buy' },
+      { id: '4', price: 125.75, quantity: 3, timestamp: new Date(Date.now() - 1000 * 60 * 45), type: 'sell' },
+    ]);
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -160,7 +134,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
             <CardContent className="p-4">
               <div className="text-sm text-slate-500">Best Bid</div>
               <div className="text-xl font-bold text-green-600">
-                {formatPrice(getBestBid())}
+                {utils.formatPrice(getBestBid())}
               </div>
             </CardContent>
           </Card>
@@ -168,7 +142,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
             <CardContent className="p-4">
               <div className="text-sm text-slate-500">Best Ask</div>
               <div className="text-xl font-bold text-red-600">
-                {formatPrice(getBestAsk())}
+                {utils.formatPrice(getBestAsk())}
               </div>
             </CardContent>
           </Card>
@@ -176,7 +150,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
             <CardContent className="p-4">
               <div className="text-sm text-slate-500">Spread</div>
               <div className="text-xl font-bold">
-                {formatPrice(getSpread())}
+                {utils.formatPrice(getSpread())}
               </div>
             </CardContent>
           </Card>
@@ -228,7 +202,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
                         className="grid grid-cols-3 text-sm hover:bg-green-50 p-1 rounded"
                       >
                         <span className="font-mono text-green-600">
-                          {formatPrice(bid.price)}
+                          {utils.formatPrice(bid.price)}
                         </span>
                         <span>{bid.quantity}</span>
                         <span className="text-slate-500">{bid.orders}</span>
@@ -254,7 +228,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
                         className="grid grid-cols-3 text-sm hover:bg-red-50 p-1 rounded"
                       >
                         <span className="font-mono text-red-600">
-                          {formatPrice(ask.price)}
+                          {utils.formatPrice(ask.price)}
                         </span>
                         <span>{ask.quantity}</span>
                         <span className="text-slate-500">{ask.orders}</span>
@@ -320,9 +294,9 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
                 onClick={handlePlaceOrder}
                 className="w-full"
                 variant="wine"
-                disabled={!orderForm.price || !orderForm.quantity}
+                disabled={!orderForm.price || !orderForm.quantity || placing}
               >
-                Place {orderForm.type === 'bid' ? 'Buy' : 'Sell'} Order
+                {placing ? 'Placing...' : `Place ${orderForm.type === 'bid' ? 'Buy' : 'Sell'} Order`}
               </Button>
 
               <div className="text-xs text-slate-500 space-y-1">
@@ -358,7 +332,7 @@ export default function OrderBook({ productId = 'sample-product' }: { productId?
                         trade.type === 'buy' ? 'text-green-600' : 'text-red-600'
                       }`}
                     >
-                      {formatPrice(trade.price)}
+                      {utils.formatPrice(trade.price)}
                     </span>
                     <span>{trade.quantity}</span>
                     <span className="text-slate-500">
