@@ -502,3 +502,162 @@ textarea:focus {
   background: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.2);
 }
+
+/* Add these luxury enhancements to your existing globals.css */
+
+/* Luxury Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* Advanced Animations */
+@keyframes luxuryShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes goldGlow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+  50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+}
+
+/* Premium Glass Morphism */
+.glass-luxury {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.37),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Ambient Particle Effects */
+.particles-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Luxury Hover Effects */
+.luxury-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-hover:hover {
+  transform: translateY(-8px) scale(1.02);
+  filter: brightness(1.1);
+}
+
+/* Enhanced Component Styles for New Components */
+
+/* Enhanced Admin Panel Styles */
+.ai-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button {
+  background: linear-gradient(135deg, #8b5cf6, #a855f7);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.ai-button:hover {
+  background: linear-gradient(135deg, #7c3aed, #9333ea);
+  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.3);
+}
+
+.ai-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.insight-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.insight-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.action-button {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Live Trading Dashboard Styles */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.trading-row {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.trading-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(219, 39, 119, 0.3);
+}
+
+.alert-item {
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 3px solid rgba(59, 130, 246, 0.5);
+}
+
+/* Luxury Product Card Styles */
+.luxury-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.luxury-badge {
+  @apply flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold backdrop-blur-md;
+}
+
+.luxury-badge.featured {
+  background: linear-gradient(to right, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.luxury-badge.investment {
+  @apply bg-gradient-to-r from-wine-600 to-wine-700 text-white shadow-lg;
+}
+
+.luxury-label {
+  @apply text-sm text-wine-600 font-semibold tracking-wide;
+}
+
+.luxury-title {
+  @apply font-serif;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.luxury-price {
+  @apply font-serif;
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+.luxury-button {
+  @apply bg-gradient-to-r from-wine-600 to-wine-700 text-white shadow-lg;
+  @apply hover:from-wine-700 hover:to-wine-800 transition-all duration-300;
+}

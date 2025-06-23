@@ -146,6 +146,28 @@ export default function AdminDashboard() {
               Logout
             </button>
           </div>
+          
+          {/* Navigation to New Components */}
+          <div className="flex flex-wrap gap-4 mt-6">
+            <a 
+              href="/admin/enhanced" 
+              className="btn-premium px-6 py-3 rounded-lg font-semibold text-sm"
+            >
+              🧠 Enhanced AI Panel
+            </a>
+            <a 
+              href="/marketplace/trading" 
+              className="btn-wine px-6 py-3 rounded-lg font-semibold text-sm"
+            >
+              📈 Live Trading Floor
+            </a>
+            <a 
+              href="/marketplace" 
+              className="btn-gold px-6 py-3 rounded-lg font-semibold text-sm"
+            >
+              🛒 Marketplace
+            </a>
+          </div>
         </div>
 
         {/* API Status */}
