@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { runScheduledPriceUpdate, getMarketInsights } from '@/lib/openai-price-updater';
+import React, { useState, useEffect } from 'react';
+// OpenAI functionality now handled via API routes
 
 interface MarketUpdate {
   timestamp: string;
@@ -23,6 +23,17 @@ export default function AdminDashboard() {
   const [lastUpdate, setLastUpdate] = useState<MarketUpdate | null>(null);
   const [marketCommentary, setMarketCommentary] = useState('');
   const [error, setError] = useState('');
+  const [apiStatus, setApiStatus] = useState<{ openaiConfigured: boolean; model: string } | null>(null);
+
+  // Check API status on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetch('/api/admin/status')
+        .then(res => res.json())
+        .then(data => setApiStatus(data))
+        .catch(err => console.error('Failed to check API status:', err));
+    }
+  }, [isAuthenticated]);
 
   const handlePasswordSubmit = () => {
     // Simple password check - you can change this password
@@ -39,13 +50,24 @@ export default function AdminDashboard() {
     setError('');
 
     try {
-      // Use environment variable instead of user input
-      const update = await runScheduledPriceUpdate(process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
+      const response = await fetch('/api/admin/update-prices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update prices');
+      }
+
+      const update = await response.json();
       setLastUpdate(update);
       
       alert(`Successfully updated ${update.totalProductsUpdated} products with ${update.marketSentiment} sentiment!`);
     } catch (err) {
-      setError(`Error updating prices: ${err instanceof Error ? err.message : 'OpenAI API key not configured'}`);
+      setError(`Error updating prices: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
     } finally {
       setLoading(false);
     }
@@ -56,13 +78,25 @@ export default function AdminDashboard() {
     setError('');
 
     try {
-      const insights = await getMarketInsights(process.env.NEXT_PUBLIC_OPENAI_API_KEY || '');
+      const response = await fetch('/api/admin/market-insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate insights');
+      }
+
+      const insights = await response.json();
       setLastUpdate(insights.updates);
       setMarketCommentary(insights.commentary);
       
       alert('Market insights generated successfully!');
     } catch (err) {
-      setError(`Error generating insights: ${err instanceof Error ? err.message : 'OpenAI API key not configured'}`);
+      setError(`Error generating insights: ${err instanceof Error ? err.message : 'Unknown error occurred'}`);
     } finally {
       setLoading(false);
     }
@@ -181,7 +215,7 @@ export default function AdminDashboard() {
                 <span className="font-medium">OpenAI API</span>
               </div>
               <p className="text-sm text-slate-600 mt-1">
-                {process.env.NEXT_PUBLIC_OPENAI_API_KEY ? 'Configured & Ready' : 'Not Configured'}
+                {apiStatus?.openaiConfigured ? `Configured & Ready (${apiStatus.model})` : 'Not Configured'}
               </p>
             </div>
             
