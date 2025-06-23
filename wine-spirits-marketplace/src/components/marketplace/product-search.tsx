@@ -22,12 +22,18 @@ export function ProductSearch({ initialProducts = [] }: ProductSearchProps) {
     rating: '',
   });
   const [sortBy, setSortBy] = useState('featured');
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState(initialProducts.length);
 
-  // Load products on component mount
+  // Only load products when filters change, not on initial mount
   useEffect(() => {
+    // Skip loading on initial mount if we have initial products
+    if (initialProducts.length > 0 && products.length === initialProducts.length && 
+        !searchQuery && !filters.type && !filters.region && !filters.priceMin && 
+        !filters.priceMax && !filters.vintage && !filters.rating) {
+      return;
+    }
     loadProducts();
-  }, [filters, sortBy]);
+  }, [filters, sortBy, searchQuery]);
 
   const loadProducts = async () => {
     setLoading(true);
@@ -45,7 +51,7 @@ export function ProductSearch({ initialProducts = [] }: ProductSearchProps) {
       const result = await searchApi.searchProducts(params);
       
       // Sort products
-      let sortedProducts = [...result.products];
+      const sortedProducts = [...result.products];
       switch (sortBy) {
         case 'price-low':
           sortedProducts.sort((a, b) => (a.current_price || a.base_price) - (b.current_price || b.base_price));
