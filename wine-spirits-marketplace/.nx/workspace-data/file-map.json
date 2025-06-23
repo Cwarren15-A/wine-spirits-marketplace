@@ -1,0 +1,125 @@
+{
+  "version": "6.0",
+  "nxVersion": "21.2.1",
+  "pathMappings": {
+    "@/*": [
+      "./src/*"
+    ]
+  },
+  "nxJsonPlugins": [
+    {
+      "name": "@nx/eslint/plugin",
+      "options": {
+        "targetName": "eslint:lint"
+      }
+    }
+  ],
+  "fileMap": {
+    "projectFileMap": {
+      "wine-spirits-marketplace": [
+        {
+          "file": ".gitignore",
+          "hash": "7802284245699904098"
+        },
+        {
+          "file": "README.md",
+          "hash": "10766794746169900117"
+        },
+        {
+          "file": "eslint.config.mjs",
+          "hash": "11349616980964601162",
+          "deps": [
+            "npm:@eslint/eslintrc"
+          ]
+        },
+        {
+          "file": "next.config.ts",
+          "hash": "17157214668998829023",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "nx.json",
+          "hash": "12788091732895129359"
+        },
+        {
+          "file": "package-lock.json",
+          "hash": "3865146647817045360"
+        },
+        {
+          "file": "package.json",
+          "hash": "14639406169614212467",
+          "deps": [
+            "npm:@eslint/eslintrc",
+            "npm:@tailwindcss/postcss",
+            "npm:@types/node",
+            "npm:@types/react",
+            "npm:@types/react-dom",
+            "npm:eslint",
+            "npm:eslint-config-next",
+            "npm:nx",
+            "npm:tailwindcss",
+            "npm:typescript",
+            "npm:@nx/eslint",
+            "npm:@nx/next",
+            "npm:next",
+            "npm:react",
+            "npm:react-dom"
+          ]
+        },
+        {
+          "file": "postcss.config.mjs",
+          "hash": "535692822154927684"
+        },
+        {
+          "file": "public/file.svg",
+          "hash": "15617830351863523835"
+        },
+        {
+          "file": "public/globe.svg",
+          "hash": "9134466864871335697"
+        },
+        {
+          "file": "public/next.svg",
+          "hash": "8300767200008744458"
+        },
+        {
+          "file": "public/vercel.svg",
+          "hash": "3007623926711696394"
+        },
+        {
+          "file": "public/window.svg",
+          "hash": "16677869292061012332"
+        },
+        {
+          "file": "src/app/favicon.ico",
+          "hash": "9157999678830540297"
+        },
+        {
+          "file": "src/app/globals.css",
+          "hash": "13803416617225302536"
+        },
+        {
+          "file": "src/app/layout.tsx",
+          "hash": "3768300601413009371",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "src/app/page.tsx",
+          "hash": "11493886883559573247",
+          "deps": [
+            "npm:next"
+          ]
+        },
+        {
+          "file": "tsconfig.json",
+          "hash": "4965826641429490352"
+        }
+      ]
+    },
+    "nonProjectFiles": []
+  }
+}

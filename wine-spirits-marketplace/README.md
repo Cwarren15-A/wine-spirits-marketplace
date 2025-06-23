@@ -1,294 +1,284 @@
-# Wine & Spirits Market Trader
+# 🍷 Wine & Spirits Market Trader
 
-A compliant alcohol marketplace platform built with Next.js 15, NestJS, and modern compliance-focused architecture.
+A **TTB Circular 2023-1 compliant** alcohol marketplace platform operating as a Third-Party Provider (TPP) under federal and California ABC guidelines. The platform facilitates transactions between licensed sellers and verified buyers without taking title to alcohol inventory.
 
-## 🏗️ Project Overview
+## 🚀 Live Demo
 
-This platform operates as a **Third-Party Provider (TPP)** under:
-- **TTB Circular 2023-1** - Federal alcohol marketplace regulations
-- **California ABC Advisory 2023-01** - State marketplace facilitator rules
+**Production:** [Coming Soon - Vercel Deployment]  
+**Development:** `cd wine-spirits-marketplace && npm run dev`
 
-### Key Compliance Features
+## 📋 Project Overview
 
-- **No Title Transfer**: Marketplace never takes possession of alcohol inventory
-- **Split-Payment Flow**: Seller receives funds first via Stripe Connect, marketplace fee deducted after
-- **Age Verification**: KYC + ID verification for all buyers (21+) 
-- **Adult Signature Delivery**: Required for all shipments via UPS/FedEx alcohol programs
-- **50-State Compliance**: Real-time shipping eligibility checking per state regulations
-- **License Verification**: Automated seller permit validation
+### Compliance Framework
+- **TTB Circular 2023-1** - Third-Party Provider regulations
+- **California ABC** - State compliance guidelines  
+- **Multi-State Shipping** - 50-state shipping matrix
+- **Age Verification** - Adult signature delivery required
+- **License Verification** - TTB permit validation
 
-## 🚀 Phase 2: Tech Stack & Architecture ✅
+### Architecture
+- **Frontend:** Next.js 15 + React 19 + TypeScript
+- **Backend:** NestJS + TypeScript + PostgreSQL
+- **Real-time:** WebSocket (Socket.io) 
+- **Payments:** Stripe Connect (split payments)
+- **Monorepo:** Nx workspace
+- **UI:** Tailwind CSS + Radix UI
 
-### Frontend (Next.js 15 / React 19)
-- **Framework**: Next.js 15 with App Router
-- **Styling**: Tailwind CSS + Radix UI primitives
-- **State Management**: React 19 features + Context API
-- **Type Safety**: TypeScript with strict configuration
+## 🎯 Phase 3: Marketplace Engine (COMPLETED)
 
-### Backend (NestJS Microservices)  
-- **Framework**: NestJS with modular architecture
-- **Database**: PostgreSQL for transactional data
-- **Analytics**: ClickHouse for order book and market data
-- **Authentication**: JWT + Passport.js
-- **Payments**: Stripe Connect for split payments
+### ✅ Order Book Service
+- Real-time bid/ask matching with WebSocket
+- Price-time priority algorithm
+- Market depth visualization
+- Order execution and status management
+- Compliance validation (age verification, shipping states)
 
-### Monorepo Structure
-```
-wine-spirits-marketplace/
-├── src/                          # Next.js frontend
-│   ├── app/                      # App Router pages
-│   │   ├── layout.tsx            # Root layout
-│   │   ├── page.tsx              # Compliance-focused homepage
-│   │   └── globals.css           # Global styles
-│   ├── components/ui/            # Radix UI component library
-│   │   ├── button.tsx            # Button with wine variant
-│   │   ├── card.tsx              # Product listing cards
-│   │   └── input.tsx             # Form inputs
-│   └── lib/
-│       └── utils.ts              # Tailwind class utilities
-├── apps/backend/                 # NestJS API
-│   ├── src/
-│   │   ├── main.ts               # Compliance-focused entry point
-│   │   ├── app.module.ts         # Database & config setup
-│   │   ├── app.controller.ts     # Health & compliance endpoints
-│   │   └── app.service.ts        # Application logic
-│   ├── tsconfig.json             # TypeScript config
-│   ├── nest-cli.json             # NestJS CLI config
-│   └── env.example               # Environment template
-├── nx.json                       # Nx workspace config
-└── package.json                  # Dependencies & scripts
-```
+### ✅ Product Catalog Service  
+- Comprehensive wine/spirits taxonomy
+- Automatic SKU generation and normalization
+- Product search with advanced filtering
+- Duplicate detection and inventory management
+- Image processing and storage ready
 
-## 🚀 Getting Started
+### ✅ Search & Discovery Service
+- Full-text search across products
+- Faceted filtering (price, region, vintage, rating)
+- Recommendation engine
+- Auto-complete suggestions
+- Performance-optimized queries
+
+## 🏗️ Installation & Setup
 
 ### Prerequisites
 - Node.js 18+
-- PostgreSQL database
-- ClickHouse database (optional for development)
+- PostgreSQL 14+
+- npm or yarn
 
-### Installation
+### Quick Start
 
-1. **Install dependencies**:
 ```bash
+# Clone the repository
+git clone https://github.com/[username]/wine-spirits-market-trader.git
+cd wine-spirits-market-trader/wine-spirits-marketplace
+
+# Install dependencies
 npm install
-```
 
-2. **Set up backend environment**:
-```bash
-cd apps/backend
-cp env.example .env
-# Edit .env with your database credentials
-```
+# Set up environment variables
+cp apps/backend/env.example apps/backend/.env
+# Configure your database and API keys
 
-3. **Database setup**:
-```sql
--- PostgreSQL
-CREATE DATABASE wine_marketplace;
-CREATE USER wine_user WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE wine_marketplace TO wine_user;
-```
-
-4. **Start development servers**:
-
-**Frontend (from root)**:
-```bash
+# Start development servers
 npm run dev
-# Available at http://localhost:3000
 ```
 
-**Backend (from apps/backend)**:
-```bash
-cd apps/backend
-npm run start:dev
-# Available at http://localhost:3001
-```
+### Environment Configuration
 
-### API Endpoints
-
-- `GET /api/v1/health` - System health check
-- `GET /api/v1/compliance/status` - Compliance feature status
-- `GET /api/v1` - Welcome message
-
-## 🎨 UI Component Library
-
-Built with **Radix UI** primitives and **Tailwind CSS**:
-
-### Button Component
-```tsx
-import { Button } from "@/components/ui/button"
-
-<Button variant="default">Default</Button>
-<Button variant="wine">Wine Theme</Button>
-<Button variant="outline">Outline</Button>
-<Button size="lg">Large</Button>
-```
-
-### Card Components
-```tsx
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent 
-} from "@/components/ui/card"
-
-<Card>
-  <CardHeader>
-    <CardTitle>2019 Bordeaux</CardTitle>
-  </CardHeader>
-  <CardContent>
-    Wine details...
-  </CardContent>
-</Card>
-```
-
-### Input Component
-```tsx
-import { Input } from "@/components/ui/input"
-
-<Input type="email" placeholder="Enter email" />
-<Input type="date" placeholder="Birth date (21+ verification)" />
-```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-**Backend (apps/backend/.env)**
 ```bash
 # Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
-DB_PASSWORD=password
-DB_NAME=wine_marketplace
+DATABASE_URL="postgresql://user:password@localhost:5432/wine_marketplace"
 
-# Stripe Connect (Split Payments)
-STRIPE_SECRET_KEY=sk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
+# JWT & Security
+JWT_SECRET="your-jwt-secret"
+API_RATE_LIMIT="100"
 
-# Age Verification API
-PERSONA_API_KEY=your_persona_api_key
-PERSONA_ENVIRONMENT=sandbox
+# Stripe Connect
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
 
-# Compliance
-COMPLIANCE_MODE=ttb_circular_2023_1
-CA_ABC_REPORTING=enabled
+# File Upload
+MAX_FILE_SIZE="5242880"
+UPLOAD_DEST="./uploads"
+
+# WebSocket
+WEBSOCKET_PORT="3001"
 ```
 
-**Frontend (.env.local)**
+## 🔧 Development
+
+### Available Scripts
+
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:3001/api/v1
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+# Development
+npm run dev              # Start all services
+npm run dev:frontend     # Next.js frontend only  
+npm run dev:backend      # NestJS backend only
+
+# Building
+npm run build           # Build all applications
+npm run build:frontend  # Build frontend
+npm run build:backend   # Build backend
+
+# Testing
+npm run test           # Run all tests
+npm run test:e2e       # End-to-end tests
+npm run lint           # Lint all code
 ```
 
-## 🗄️ Database Architecture
+### Project Structure
 
-### PostgreSQL (Primary OLTP)
-- Users (buyers/sellers with KYC data)
-- Products (wine/spirits catalog with compliance metadata)
-- Orders (marketplace transactions with split payment tracking)
-- Licenses (seller permit verification)
-- Shipping (carrier integration, adult signature tracking)
+```
+wine-spirits-marketplace/
+├── apps/
+│   └── backend/          # NestJS API server
+│       ├── src/
+│       │   ├── entities/           # Database entities
+│       │   ├── modules/
+│       │   │   ├── order-book/     # Real-time order matching
+│       │   │   ├── product-catalog/# Wine/spirits taxonomy
+│       │   │   └── search/         # Search & discovery
+│       │   └── seeds/              # Sample data
+│       └── package.json
+├── src/                  # Next.js frontend
+│   ├── app/              # App router pages
+│   ├── components/       # React components
+│   │   ├── marketplace/  # Core marketplace UI
+│   │   └── ui/           # Reusable UI components
+│   └── lib/              # Utilities
+├── public/               # Static assets
+└── package.json          # Root package.json
+```
 
-### ClickHouse (Analytics OLAP)
-- Order book events (bids/asks with price-time priority)
-- Market data (pricing indices, volatility metrics)
-- Compliance analytics (age verification success rates)
-- Business intelligence (seller performance, buyer behavior)
+## 🎮 API Documentation
 
-## 🔐 Compliance Implementation
+### Order Book API
+```bash
+POST   /api/order-book/orders     # Place bid/ask order
+GET    /api/order-book/depth      # Market depth data
+GET    /api/order-book/orders     # Order history
+DELETE /api/order-book/orders/:id # Cancel order
+```
+
+### Product Catalog API  
+```bash
+GET    /api/products              # Search products
+POST   /api/products              # Create product (sellers)
+GET    /api/products/:id          # Product details
+PUT    /api/products/:id          # Update product
+GET    /api/products/taxonomy     # Wine/spirits taxonomy
+```
+
+### Search API
+```bash
+GET    /api/search                # Advanced product search
+GET    /api/search/autocomplete   # Search suggestions  
+GET    /api/search/recommendations # Personalized recommendations
+```
+
+### WebSocket Events
+```javascript
+// Real-time order book updates
+socket.on('order-book-update', (data) => {
+  // Handle market depth changes
+});
+
+socket.on('order-executed', (data) => {
+  // Handle successful order execution
+});
+```
+
+## 🔐 Compliance & Security
 
 ### TTB Circular 2023-1 Compliance
-- ✅ **TPP Definition**: Platform facilitates without holding federal permit
-- ✅ **No Title Transfer**: Inventory stays with licensed seller
-- ✅ **Payment Flow**: Seller paid first via Stripe Connect escrow
-- ✅ **Recordkeeping**: 3-year retention for audits
-- ✅ **Age Verification**: DOB + ID scan at checkout and delivery
+- ✅ No title transfer (TPP model)
+- ✅ Split payment processing 
+- ✅ Licensed seller verification
+- ✅ Adult signature delivery
+- ✅ State shipping restrictions
+- ✅ Tax compliance integration
 
-### California ABC Advisory Compliance
-- ✅ **Type 85 License**: Marketplace facilitator license (when needed)
-- ✅ **Seller-of-Record**: Licensed sellers only (Type 02/17/20/21)
-- ✅ **Funds Flow**: Full price to seller before fee deduction
-- ✅ **Adult Signature**: 21+ delivery confirmation required
-- ✅ **Inventory Control**: No unlicensed storage/fulfillment
+### Security Features
+- JWT authentication
+- Rate limiting (100 req/min)
+- Input validation & sanitization
+- CORS protection
+- Environment variable security
+- Secure WebSocket connections
 
-### 50-State Shipping Matrix
-- ✅ **Real-time validation**: State-by-state DtC shipping rules
-- ✅ **Volume limits**: Per-resident case/liter restrictions
-- ✅ **Permit requirements**: State licensing fee tracking
-- ✅ **Dry laws**: County/municipal restriction enforcement
+## 🌍 Deployment
 
-## 📈 Development Roadmap
+### Vercel Deployment (Recommended)
 
-- ✅ **Phase 1**: Regulatory documentation (COMPLETE)
-- ✅ **Phase 2**: Tech stack & architecture (COMPLETE)
-- 🔄 **Phase 3**: Marketplace engine (WebSocket order book, product catalog, search)
-- 📋 **Phase 4**: Compliance automation (Persona KYC, license OCR)
-- 📋 **Phase 5**: Logistics & fulfillment (UPS/FedEx integration)
-- 📋 **Phase 6**: Advanced trading (auctions, futures, options)
-- 📋 **Phase 7**: Analytics & intelligence (market data, BI dashboards)
+1. **Connect GitHub Repository:**
+   ```bash
+   # Push to GitHub (if not already done)
+   git remote add origin https://github.com/[username]/wine-spirits-market-trader.git
+   git push -u origin main
+   ```
 
-## 🧪 Testing
+2. **Deploy to Vercel:**
+   - Visit [vercel.com](https://vercel.com)
+   - Import GitHub repository
+   - Configure environment variables
+   - Deploy!
+
+3. **Environment Variables in Vercel:**
+   ```
+   DATABASE_URL
+   JWT_SECRET
+   STRIPE_SECRET_KEY
+   STRIPE_WEBHOOK_SECRET
+   ```
+
+### Manual Deployment
 
 ```bash
-# Frontend tests
-npm test
+# Build for production
+npm run build
 
-# Backend tests  
-cd apps/backend
-npm test
-
-# E2E tests (planned)
-npm run test:e2e
+# Start production server
+npm start
 ```
 
-## 🚢 Deployment
+## 📊 Monitoring & Analytics
 
-### Production Environment Setup
+- **Real-time Metrics:** Order execution rates, market depth
+- **Performance:** API response times, WebSocket latency  
+- **Compliance:** License verification rates, shipping validation
+- **Business:** Transaction volume, seller onboarding
 
-1. **Database**: PostgreSQL with SSL enabled
-2. **Analytics**: ClickHouse cluster for market data
-3. **CDN**: Static assets via Vercel/CloudFront
-4. **Monitoring**: Compliance audit logging enabled
-5. **Security**: SOC 2 compliance framework
+## 🚦 Phase 4: Next Steps
 
-### Environment Variables (Production)
-```bash
-NODE_ENV=production
-COMPLIANCE_MODE=ttb_circular_2023_1
-CA_ABC_REPORTING=enabled
-AUDIT_LOGGING=enabled
-DB_SSL=required
-```
+### Compliance & Identity Management
+- [ ] Persona API integration for identity verification
+- [ ] Automated license verification system
+- [ ] Risk & fraud detection engine
+- [ ] Enhanced compliance reporting
+
+### Advanced Features
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics dashboard
+- [ ] Multi-currency support
+- [ ] International shipping
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Ensure compliance with TTB/ABC regulations
-4. Add tests for new functionality  
-5. Submit a pull request
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## 📄 Legal & Compliance
+## 📄 License
 
-This platform facilitates transactions between licensed sellers and verified buyers. We do not take title to alcoholic beverages and operate under applicable marketplace facilitator statutes. All transactions are subject to state and federal alcohol regulations.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-**Regulatory Framework**:
-- TTB Circular 2023-1 (Federal)
-- CA ABC Advisory 2023-01 (California)
-- 50-state DtC shipping matrix (2025)
+## ⚖️ Legal Disclaimer
+
+This platform facilitates alcohol transactions in compliance with federal and state regulations. Users must:
+- Maintain valid alcohol licenses
+- Comply with local and state laws
+- Verify buyer age and location
+- Follow shipping restrictions
+
+**Not legal advice. Consult alcohol beverage attorneys for compliance guidance.**
+
+## 📞 Support
+
+- **Documentation:** [GitHub Wiki](https://github.com/[username]/wine-spirits-market-trader/wiki)
+- **Issues:** [GitHub Issues](https://github.com/[username]/wine-spirits-market-trader/issues)  
+- **Discussions:** [GitHub Discussions](https://github.com/[username]/wine-spirits-market-trader/discussions)
 
 ---
 
-**Phase 2 Status**: ✅ **COMPLETE**
-- [x] Next.js 15 / React 19 frontend with compliance-focused UI
-- [x] NestJS microservices backend with health/compliance endpoints
-- [x] PostgreSQL + ClickHouse database architecture  
-- [x] Stripe Connect split payment configuration
-- [x] Nx monorepo structure with proper separation
-- [x] Tailwind + Radix UI component library with wine theme
-
-**Ready for Phase 3**: Marketplace Engine Development
-
-🍷 **Licensed. Compliant. Ready to Trade.**
+**Built with ❤️ for the compliant alcohol marketplace industry** 
