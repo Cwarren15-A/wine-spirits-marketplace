@@ -1,398 +1,373 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from 'next/link';
+import { searchApi, utils, type Product } from '@/lib/api';
+import { TrendBadge } from '@/components/ui/TrendBadge';
 
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  type: 'wine' | 'spirits' | 'beer' | 'sake';
-  varietal: string;
-  region: string;
-  vintage?: number;
-  producer: string;
-  base_price: number;
-  average_rating?: number;
-  wine_spectator_score?: number;
-  primary_image_url?: string;
-  seller: {
-    business_name: string;
-    seller_rating: number;
-  };
+interface ProductSearchProps {
+  initialProducts?: Product[];
 }
 
-interface SearchFacets {
-  types: Array<{ key: string; count: number }>;
-  regions: Array<{ key: string; count: number }>;
-  varietals: Array<{ key: string; count: number }>;
-  priceRanges: Array<{ key: string; count: number }>;
-  vintages: Array<{ key: string; count: number }>;
-}
-
-interface SearchResults {
-  products: Product[];
-  total: number;
-  facets: SearchFacets;
-}
-
-export default function ProductSearch() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<SearchResults | null>(null);
+export function ProductSearch({ initialProducts = [] }: ProductSearchProps) {
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState({
     type: '',
     region: '',
-    varietal: '',
-    minPrice: '',
-    maxPrice: '',
+    priceMin: '',
+    priceMax: '',
     vintage: '',
+    rating: '',
   });
+  const [sortBy, setSortBy] = useState('featured');
+  const [total, setTotal] = useState(0);
 
-  const handleSearch = async () => {
+  // Load products on component mount
+  useEffect(() => {
+    loadProducts();
+  }, [filters, sortBy]);
+
+  const loadProducts = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('query', searchQuery);
-      if (filters.type) params.append('type', filters.type);
-      if (filters.region) params.append('region', filters.region);
-      if (filters.varietal) params.append('varietal', filters.varietal);
-      if (filters.minPrice) params.append('minPrice', filters.minPrice);
-      if (filters.maxPrice) params.append('maxPrice', filters.maxPrice);
-      if (filters.vintage) params.append('vintage', filters.vintage);
+      const params = {
+        query: searchQuery || undefined,
+        type: filters.type || undefined,
+        region: filters.region || undefined,
+        priceMin: filters.priceMin ? parseFloat(filters.priceMin) : undefined,
+        priceMax: filters.priceMax ? parseFloat(filters.priceMax) : undefined,
+        vintage: filters.vintage ? parseInt(filters.vintage) : undefined,
+        rating: filters.rating ? parseFloat(filters.rating) : undefined,
+      };
 
-      const response = await fetch(`http://localhost:3001/search/products?${params}`);
-      if (response.ok) {
-        const data = await response.json();
-        setResults(data);
-      } else {
-        console.error('Search failed');
-        // Fallback to sample data for demo
-        setResults(getSampleResults());
+      const result = await searchApi.searchProducts(params);
+      
+      // Sort products
+      let sortedProducts = [...result.products];
+      switch (sortBy) {
+        case 'price-low':
+          sortedProducts.sort((a, b) => (a.current_price || a.base_price) - (b.current_price || b.base_price));
+          break;
+        case 'price-high':
+          sortedProducts.sort((a, b) => (b.current_price || b.base_price) - (a.current_price || a.base_price));
+          break;
+        case 'rating':
+          sortedProducts.sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0));
+          break;
+        case 'vintage':
+          sortedProducts.sort((a, b) => (b.vintage || 0) - (a.vintage || 0));
+          break;
+        case 'rarity':
+          sortedProducts.sort((a, b) => (b.rarity_score || 0) - (a.rarity_score || 0));
+          break;
+        case 'performance':
+          sortedProducts.sort((a, b) => (b.fiveYearPriceChangePct || 0) - (a.fiveYearPriceChangePct || 0));
+          break;
+        default: // featured
+          sortedProducts.sort((a, b) => {
+            if (a.featured && !b.featured) return -1;
+            if (!a.featured && b.featured) return 1;
+            return (b.rarity_score || 0) - (a.rarity_score || 0);
+          });
       }
+
+      setProducts(sortedProducts);
+      setTotal(result.total);
     } catch (error) {
-      console.error('Search error:', error);
-      // Fallback to sample data for demo
-      setResults(getSampleResults());
+      console.error('Error loading products:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    // Load initial results
-    handleSearch();
-  }, []);
-
-  const getSampleResults = (): SearchResults => ({
-    products: [
-      {
-        id: '1',
-        name: '2019 Napa Valley Cabernet Sauvignon Reserve',
-        description: 'Rich, full-bodied Cabernet with notes of blackcurrant, cedar, and vanilla.',
-        type: 'wine',
-        varietal: 'Cabernet Sauvignon',
-        region: 'Napa Valley',
-        vintage: 2019,
-        producer: 'Napa Valley Premium Wines',
-        base_price: 89.99,
-        average_rating: 4.6,
-        wine_spectator_score: 92,
-        seller: {
-          business_name: 'Napa Valley Premium Wines',
-          seller_rating: 4.8,
-        },
-      },
-      {
-        id: '2',
-        name: 'Small Batch Bourbon Whiskey 12 Year',
-        description: 'Hand-selected barrels aged 12 years. Rich caramel and vanilla notes.',
-        type: 'spirits',
-        varietal: 'Bourbon',
-        region: 'Kentucky',
-        producer: 'Kentucky Bourbon Distillery',
-        base_price: 129.99,
-        average_rating: 4.7,
-        seller: {
-          business_name: 'Kentucky Bourbon Distillery',
-          seller_rating: 4.9,
-        },
-      },
-      {
-        id: '3',
-        name: '2020 Willamette Valley Pinot Noir',
-        description: 'Elegant Pinot Noir showcasing the terroir of Willamette Valley.',
-        type: 'wine',
-        varietal: 'Pinot Noir',
-        region: 'Willamette Valley',
-        vintage: 2020,
-        producer: 'Oregon Artisan Wines',
-        base_price: 38.99,
-        average_rating: 4.5,
-        wine_spectator_score: 91,
-        seller: {
-          business_name: 'Oregon Artisan Wines',
-          seller_rating: 4.7,
-        },
-      },
-    ],
-    total: 3,
-    facets: {
-      types: [
-        { key: 'wine', count: 2 },
-        { key: 'spirits', count: 1 },
-      ],
-      regions: [
-        { key: 'Napa Valley', count: 1 },
-        { key: 'Kentucky', count: 1 },
-        { key: 'Willamette Valley', count: 1 },
-      ],
-      varietals: [
-        { key: 'Cabernet Sauvignon', count: 1 },
-        { key: 'Bourbon', count: 1 },
-        { key: 'Pinot Noir', count: 1 },
-      ],
-      priceRanges: [
-        { key: 'Under $50', count: 1 },
-        { key: '$50-$100', count: 1 },
-        { key: '$100-$250', count: 1 },
-      ],
-      vintages: [
-        { key: '2020', count: 1 },
-        { key: '2019', count: 1 },
-      ],
-    },
-  });
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadProducts();
   };
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'wine': return '🍷';
-      case 'spirits': return '🥃';
-      case 'beer': return '🍺';
-      case 'sake': return '🍶';
-      default: return '🍾';
-    }
+  const clearFilters = () => {
+    setFilters({
+      type: '',
+      region: '',
+      priceMin: '',
+      priceMax: '',
+      vintage: '',
+      rating: '',
+    });
+    setSearchQuery('');
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-600 to-red-600 bg-clip-text text-transparent">
-          Marketplace Search & Discovery
-        </h1>
-        <p className="text-lg text-slate-600 mb-6">
-          Phase 3: Advanced search with faceted filtering, Elasticsearch integration, and real-time results
-        </p>
-
-        {/* Search Bar */}
-        <div className="flex gap-4 mb-6">
-          <Input
-            placeholder="Search wines, spirits, producers, regions..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-1"
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-          />
-          <Button onClick={handleSearch} disabled={loading} variant="wine">
-            {loading ? 'Searching...' : 'Search'}
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-          <select
-            className="px-3 py-2 border rounded-md"
-            value={filters.type}
-            onChange={(e) => setFilters({ ...filters, type: e.target.value })}
-          >
-            <option value="">All Types</option>
-            <option value="wine">Wine</option>
-            <option value="spirits">Spirits</option>
-            <option value="beer">Beer</option>
-            <option value="sake">Sake</option>
-          </select>
-
-          <Input
-            placeholder="Region"
-            value={filters.region}
-            onChange={(e) => setFilters({ ...filters, region: e.target.value })}
-          />
-
-          <Input
-            placeholder="Varietal"
-            value={filters.varietal}
-            onChange={(e) => setFilters({ ...filters, varietal: e.target.value })}
-          />
-
-          <Input
-            placeholder="Min Price"
-            type="number"
-            value={filters.minPrice}
-            onChange={(e) => setFilters({ ...filters, minPrice: e.target.value })}
-          />
-
-          <Input
-            placeholder="Max Price"
-            type="number"
-            value={filters.maxPrice}
-            onChange={(e) => setFilters({ ...filters, maxPrice: e.target.value })}
-          />
-
-          <Input
-            placeholder="Vintage"
-            type="number"
-            value={filters.vintage}
-            onChange={(e) => setFilters({ ...filters, vintage: e.target.value })}
-          />
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-4 gap-6">
-        {/* Faceted Filters Sidebar */}
-        {results && (
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Refine Results</CardTitle>
-                <CardDescription>
-                  {results.total} products found
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Type Facets */}
-                <div>
-                  <h4 className="font-semibold mb-2">Type</h4>
-                  {results.facets.types.map((facet) => (
-                    <div key={facet.key} className="flex justify-between text-sm">
-                      <button
-                        className="hover:text-purple-600"
-                        onClick={() => setFilters({ ...filters, type: facet.key })}
-                      >
-                        {getTypeIcon(facet.key)} {facet.key}
-                      </button>
-                      <span className="text-slate-500">({facet.count})</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Region Facets */}
-                <div>
-                  <h4 className="font-semibold mb-2">Region</h4>
-                  {results.facets.regions.slice(0, 5).map((facet) => (
-                    <div key={facet.key} className="flex justify-between text-sm">
-                      <button
-                        className="hover:text-purple-600"
-                        onClick={() => setFilters({ ...filters, region: facet.key })}
-                      >
-                        {facet.key}
-                      </button>
-                      <span className="text-slate-500">({facet.count})</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Price Range Facets */}
-                <div>
-                  <h4 className="font-semibold mb-2">Price Range</h4>
-                  {results.facets.priceRanges.map((facet) => (
-                    <div key={facet.key} className="flex justify-between text-sm">
-                      <span>{facet.key}</span>
-                      <span className="text-slate-500">({facet.count})</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+  const ProductCard = ({ product }: { product: Product }) => (
+    <Link href={`/marketplace/product/${product.id}`} className="group">
+      <div className="card-premium rounded-xl overflow-hidden transition-all duration-300 group-hover:scale-105 group-hover:shadow-2xl">
+        {/* Product Image */}
+        <div className="relative h-64 bg-gradient-to-br from-wine-100 to-gold-100 flex items-center justify-center">
+          {product.primary_image_url ? (
+            <img
+              src={product.primary_image_url}
+              alt={product.name}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+          ) : null}
+          <div className={`text-6xl ${product.primary_image_url ? 'hidden' : ''}`}>
+            {utils.getProductIcon(product.type)}
           </div>
-        )}
+          
+          {/* Badges */}
+          <div className="absolute top-3 left-3 flex flex-col gap-2">
+            {product.featured && (
+              <span className="bg-gold-500 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                ⭐ FEATURED
+              </span>
+            )}
+            {product.investment_grade && (
+              <span className="bg-wine-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
+                💎 INVESTMENT
+              </span>
+            )}
+          </div>
 
-        {/* Search Results */}
-        <div className={`${results ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-              <p className="mt-2">Searching products...</p>
-            </div>
-          ) : results && results.products.length > 0 ? (
-            <div className="grid md:grid-cols-2 gap-6">
-              {results.products.map((product) => (
-                <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg leading-tight">
-                          {getTypeIcon(product.type)} {product.name}
-                        </CardTitle>
-                        <CardDescription className="mt-1">
-                          {product.producer} • {product.region}
-                        </CardDescription>
-                      </div>
-                      <div className="text-right ml-4">
-                        <div className="text-2xl font-bold text-purple-600">
-                          {formatPrice(product.base_price)}
-                        </div>
-                        {product.vintage && (
-                          <div className="text-sm text-slate-500">
-                            {product.vintage}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                      {product.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4 text-sm">
-                        {product.average_rating && (
-                          <span className="flex items-center">
-                            ⭐ {product.average_rating.toFixed(1)}
-                          </span>
-                        )}
-                        {product.wine_spectator_score && (
-                          <span className="text-purple-600">
-                            WS: {product.wine_spectator_score}
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-sm text-slate-500">
-                        🏷️ {product.seller.business_name}
-                      </div>
-                    </div>
+          {/* Price Change & 5-Year Performance */}
+          <div className="absolute top-3 right-3 flex flex-col gap-2">
+            {product.price_change_24h && (
+              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                product.price_change_24h > 0 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-red-500 text-white'
+              }`}>
+                {utils.formatPercentage(product.price_change_24h)}
+              </span>
+            )}
+            {product.fiveYearPriceChangePct !== undefined && (
+              <TrendBadge pct={product.fiveYearPriceChangePct} size="sm" />
+            )}
+          </div>
+        </div>
 
-                    <div className="flex gap-2">
-                      <Button className="flex-1" variant="outline">
-                        View Details
-                      </Button>
-                      <Button variant="wine">
-                        Place Order
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        {/* Product Info */}
+        <div className="p-6">
+          {/* Header */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-wine-600 font-medium">
+                {product.type.toUpperCase()} • {product.vintage || 'NV'}
+              </span>
+              <span className="text-sm text-slate-500">
+                {utils.getVerificationBadge(product.seller.verification_status)}
+              </span>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-slate-500">No products found</p>
-              <p className="text-sm text-slate-400 mt-2">
-                Try adjusting your search terms or filters
-              </p>
+            
+            <h3 className="text-lg font-bold text-wine-900 mb-1 group-hover:text-wine-700 transition-colors">
+              {product.name}
+            </h3>
+            
+            <p className="text-sm text-wine-600 mb-2">
+              {product.producer} • {product.region}
+            </p>
+          </div>
+
+          {/* Investment Performance */}
+          {product.fiveYearPriceChangePct !== undefined && (
+            <div className="mb-4 p-3 bg-gradient-to-r from-slate-50 to-wine-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-700">5-Year Performance</span>
+                <TrendBadge pct={product.fiveYearPriceChangePct} size="md" />
+              </div>
+              <div className="text-xs text-slate-600 mt-1">
+                Investment-grade collectible with strong market performance
+              </div>
             </div>
           )}
+
+          {/* Price */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-2xl font-bold text-wine-900">
+                  {utils.formatPrice(product.current_price || product.base_price)}
+                </div>
+                {product.current_price && product.current_price !== product.base_price && (
+                  <div className="text-sm text-slate-500 line-through">
+                    {utils.formatPrice(product.base_price)}
+                  </div>
+                )}
+              </div>
+              
+              <div className="text-right">
+                <button className="btn-premium px-4 py-2 text-sm font-semibold rounded-lg">
+                  View Details
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
+    </Link>
+  );
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold text-premium mb-4">
+          Premium Wine & Spirits Collection
+        </h1>
+        <p className="text-xl text-slate-600">
+          Discover investment-grade wines and rare spirits from verified sellers
+        </p>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="card-premium rounded-xl p-6 mb-8">
+        <form onSubmit={handleSearch} className="space-y-4">
+          {/* Search Bar */}
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search wines, spirits, producers, regions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-4 py-3 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-premium px-6 py-3 rounded-lg font-semibold disabled:opacity-50"
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+
+          {/* Filters Row */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+            <select
+              value={filters.type}
+              onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            >
+              <option value="">All Types</option>
+              <option value="wine">Wine</option>
+              <option value="spirits">Spirits</option>
+            </select>
+
+            <input
+              type="text"
+              placeholder="Region"
+              value={filters.region}
+              onChange={(e) => setFilters(prev => ({ ...prev, region: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
+
+            <input
+              type="number"
+              placeholder="Min Price"
+              value={filters.priceMin}
+              onChange={(e) => setFilters(prev => ({ ...prev, priceMin: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
+
+            <input
+              type="number"
+              placeholder="Max Price"
+              value={filters.priceMax}
+              onChange={(e) => setFilters(prev => ({ ...prev, priceMax: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
+
+            <input
+              type="number"
+              placeholder="Vintage"
+              value={filters.vintage}
+              onChange={(e) => setFilters(prev => ({ ...prev, vintage: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            />
+
+            <select
+              value={filters.rating}
+              onChange={(e) => setFilters(prev => ({ ...prev, rating: e.target.value }))}
+              className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+            >
+              <option value="">Any Rating</option>
+              <option value="4.5">4.5+ Stars</option>
+              <option value="4.0">4.0+ Stars</option>
+              <option value="3.5">3.5+ Stars</option>
+            </select>
+          </div>
+
+          {/* Clear Filters */}
+          <div className="flex justify-between items-center">
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="text-wine-600 hover:text-wine-800 text-sm font-medium"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* Results Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="text-slate-600">
+          {loading ? 'Searching...' : `${total} products found`}
+        </div>
+        
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          className="px-3 py-2 border border-wine-200 rounded-lg focus:ring-2 focus:ring-wine-500"
+        >
+          <option value="featured">Featured First</option>
+          <option value="price-low">Price: Low to High</option>
+          <option value="price-high">Price: High to Low</option>
+          <option value="rating">Highest Rated</option>
+          <option value="vintage">Newest Vintage</option>
+          <option value="rarity">Rarity Score</option>
+          <option value="performance">5-Year Performance</option>
+        </select>
+      </div>
+
+      {/* Products Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="card-premium rounded-xl p-6 animate-pulse">
+              <div className="h-64 bg-slate-200 rounded-lg mb-4"></div>
+              <div className="h-4 bg-slate-200 rounded mb-2"></div>
+              <div className="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+              <div className="h-8 bg-slate-200 rounded"></div>
+            </div>
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-6xl mb-4">🍷</div>
+          <h3 className="text-xl font-semibold text-slate-800 mb-2">No products found</h3>
+          <p className="text-slate-600 mb-4">Try adjusting your search criteria</p>
+          <button
+            onClick={clearFilters}
+            className="btn-premium px-6 py-3 rounded-lg font-semibold"
+          >
+            Clear Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 } 
