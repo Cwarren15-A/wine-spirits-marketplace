@@ -2,8 +2,5 @@
   "version": 2,
   "name": "wine-spirits-marketplace",
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "cd wine-spirits-marketplace && npm run build",
-  "outputDirectory": "wine-spirits-marketplace/.next",
-  "installCommand": "cd wine-spirits-marketplace && npm install",
   "framework": "nextjs"
 } 
